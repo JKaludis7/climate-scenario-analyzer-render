@@ -35,6 +35,13 @@ app.post("/api/climate", async (req, res) => {
     const { system, userMessage } = req.body;
     if (!system || !userMessage) return res.status(400).json({ error: "Missing required fields" });
 
+    // Second call (scenario modeling) doesn't need web search — all company data
+    // is already in the prompt. Only the first (research) call needs web search.
+    const isScenarioCall = userMessage.startsWith("Model climate scenario impacts");
+    const requestBody = isScenarioCall
+      ? { model: "claude-haiku-4-5-20251001", max_tokens: 8192, system, messages: [{ role: "user", content: userMessage }] }
+      : { model: "claude-haiku-4-5-20251001", max_tokens: 8192, system, messages: [{ role: "user", content: userMessage }], tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }] };
+
     const maxRetries = 3;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -43,15 +50,9 @@ app.post("/api/climate", async (req, res) => {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
-"anthropic-beta": "web-search-2025-03-05",
+          "anthropic-beta": "web-search-2025-03-05",
         },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8192,
-          system,
-          messages: [{ role: "user", content: userMessage }],
-          tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.status === 429) {
