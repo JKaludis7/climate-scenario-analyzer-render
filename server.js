@@ -47,7 +47,7 @@ app.post("/api/climate", async (req, res) => {
         },
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 4096,
+          max_tokens: 8192,
           system,
           messages: [{ role: "user", content: userMessage }],
           tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
