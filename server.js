@@ -70,12 +70,15 @@ app.post("/api/climate", async (req, res) => {
       }
 
       const data = await response.json();
+      console.log("API stop_reason:", data.stop_reason);
+      console.log("API content types:", (data.content || []).map(b => b.type));
       let text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+      console.log("Raw text length:", text.length);
+      console.log("Raw text preview:", text.substring(0, 500));
 
-      // Strip ALL XML/HTML tags aggressively
-      text = text.replace(/<[^>]+>/g, "");
-      text = text.replace(/```json\s*/g, "").replace(/```\s*/g, "");
-      text = text.replace(/  +/g, " ");
+      // Strip citation/XML tags (targeted, not aggressive)
+      text = text.replace(/<\/?antml:[^>]*>/g, "").replace(/<\/?cite[^>]*>/g, "").replace(/<[^>]*index="[^"]*"[^>]*>/g, "");
+      text = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
 
       return res.json({ text });
     }
